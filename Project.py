@@ -4,6 +4,7 @@ from enum import Enum
 import sqlite3
 
 from PyQt5.QtCore import Qt, QUrl, QTimer, QRect
+from PyQt5.QtGui import QTransform
 from PyQt5.QtMultimedia import QMediaPlaylist, QMediaContent
 from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem
 from PyQt5 import QtCore, QtGui, QtWidgets, QtMultimedia
@@ -30,7 +31,8 @@ class GameMode(Enum):
     PLAY = 1
     SUSPENDED = 2
     WIN = 3
-    LOSE = 4
+    LOSEENEMY = 4
+    LOSEFIRE = 5
 
 
 gamemode = GameMode.SUSPENDED
@@ -396,6 +398,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.load_second_mp3('bind_not_found_music.mp3')
             self.play_2()
         print(gamemode)
+
     def check_move(self):
         global gamemode
         con = sqlite3.connect("player_stats.sqlite")
@@ -414,7 +417,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     self.play_final_music(False)
                     self.query = cur.execute(
                         f"""update stats set stats = stats + 1 where title = 'Кол-во поражений'""").fetchall()
-                    gamemode = GameMode.LOSE
+                    gamemode = GameMode.LOSEFIRE
                     self.can_move = False
                     changes = True
                     break
@@ -425,7 +428,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         self.setWindowTitle("Поражение!")
                         self.query = cur.execute(f"""update stats set stats = stats + 1 where title =
                          'Кол-во поражений'""").fetchall()
-                        gamemode = GameMode.LOSE
+                        gamemode = GameMode.LOSEENEMY
                         self.can_move = False
                         break
         con.commit()
@@ -457,13 +460,28 @@ class GameObject:
         tmp = QtGui.QPixmap(self.path()).scaled(QtCore.QSize(step, step),
                                                 aspectRatioMode=QtCore.Qt.AspectRatioMode.KeepAspectRatio,
                                                 transformMode=QtCore.Qt.TransformationMode.FastTransformation)
+        if gamemode != gamemode.PLAY:
+            tmppen = QtGui.QPen()
+            tmppen.setWidth(1)
+            tmppen.setColor(QtGui.QColor(*bg_color))  # r, g, b
+            painter.setPen(tmppen)
+            tmpbrush = QtGui.QBrush()
+            tmpbrush.setColor(QtGui.QColor(*bg_color))  # r, g, b
+            tmpbrush.setStyle(Qt.BrushStyle.SolidPattern)
+            painter.setBrush(tmpbrush)
+            painter.drawRect(QRect(self.x, self.y, step, step))
         if horizontal:  # horizontal
-            # painter.drawEllipse(self.x, self.y + (step // 4) * 2, step, step // 2)
-            # if self.type == 1:
+            print('h')
+            if self.type == Type.PLAYER:
+                tmp = tmp.transformed(QTransform().scale(-1, 1))
+                # painter.drawPixmap(QRect(self.x, self.y, step, step), tmp, QRect(0, 0, step, step))
+            # elif self.type == Type.ENEMY:
+            #     tmp = tmp.transformed(QTransform().scale(-1, 1))
             painter.drawPixmap(QRect(self.x, self.y, step, step), tmp, QRect(0, 0, step, step))
 
         else:  # vertical
-            painter.drawEllipse(self.x + (step // 4), self.y, step // 2, step)
+            print('v')
+            painter.drawPixmap(QRect(self.x, self.y, step, step), tmp, QRect(0, 0, step, step))
 
     def path(self):
         global gamemode
@@ -472,7 +490,7 @@ class GameObject:
         elif self.type == Type.ENEMY:
             return 'enemy.svg'
         elif self.type == Type.FIRE:
-            return 'trap.svg'
+            return 'trap_on.svg' if gamemode == GameMode.LOSEFIRE else 'trap_off.svg'
         elif self.type == Type.EXIT:
             return 'exit_open.svg' if gamemode == GameMode.PLAY else 'exit_closed.svg'
 
