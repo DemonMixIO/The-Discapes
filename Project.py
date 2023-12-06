@@ -3,7 +3,7 @@ import sys
 from enum import Enum
 import sqlite3
 
-from PyQt5.QtCore import Qt, QUrl, QTimer
+from PyQt5.QtCore import Qt, QUrl, QTimer, QRect
 from PyQt5.QtMultimedia import QMediaPlaylist, QMediaContent
 from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem
 from PyQt5 import QtCore, QtGui, QtWidgets, QtMultimedia
@@ -24,6 +24,16 @@ class Type(Enum):
     ENEMY = 2
     FIRE = 3
     EXIT = 4
+
+
+class GameMode(Enum):
+    PLAY = 1
+    SUSPENDED = 2
+    WIN = 3
+    LOSE = 4
+
+
+gamemode = GameMode.SUSPENDED
 
 
 class Ui_MainWindow(object):
@@ -272,6 +282,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         con.commit()
 
     def prepare_and_start(self):
+        global gamemode
         self.stop_final_music()
         self.setWindowTitle('The Discapes')
         self.label.setFocus()
@@ -279,6 +290,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         n_fires = self.countFire.value()
         n_enemies = self.countEnemy.value()
         array.clear()
+        gamemode = GameMode.PLAY
         self.can_move = True
         self.stats_update()
         self.stop()
@@ -383,8 +395,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             self.load_second_mp3('bind_not_found_music.mp3')
             self.play_2()
-
+        print(gamemode)
     def check_move(self):
+        global gamemode
         con = sqlite3.connect("player_stats.sqlite")
         cur = con.cursor()
         if self.player == self.ext:
@@ -392,6 +405,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.setWindowTitle('Победа!')
             self.query = cur.execute(f"""update stats set stats = stats + 1 where title = 'Кол-во побед'
             """).fetchall()
+            gamemode = GameMode.WIN
             self.can_move = False
         else:
             changes = False
@@ -400,6 +414,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     self.play_final_music(False)
                     self.query = cur.execute(
                         f"""update stats set stats = stats + 1 where title = 'Кол-во поражений'""").fetchall()
+                    gamemode = GameMode.LOSE
                     self.can_move = False
                     changes = True
                     break
@@ -410,6 +425,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         self.setWindowTitle("Поражение!")
                         self.query = cur.execute(f"""update stats set stats = stats + 1 where title =
                          'Кол-во поражений'""").fetchall()
+                        gamemode = GameMode.LOSE
                         self.can_move = False
                         break
         con.commit()
@@ -438,11 +454,27 @@ class GameObject:
         brush.setColor(QtGui.QColor(*self.color()))  # r, g, b
         brush.setStyle(Qt.BrushStyle.SolidPattern)
         painter.setBrush(brush)
+        tmp = QtGui.QPixmap(self.path()).scaled(QtCore.QSize(step, step),
+                                                aspectRatioMode=QtCore.Qt.AspectRatioMode.KeepAspectRatio,
+                                                transformMode=QtCore.Qt.TransformationMode.FastTransformation)
         if horizontal:  # horizontal
-            painter.drawEllipse(self.x, self.y + (step // 4) * 2, step, step // 2)
+            # painter.drawEllipse(self.x, self.y + (step // 4) * 2, step, step // 2)
+            # if self.type == 1:
+            painter.drawPixmap(QRect(self.x, self.y, step, step), tmp, QRect(0, 0, step, step))
 
         else:  # vertical
             painter.drawEllipse(self.x + (step // 4), self.y, step // 2, step)
+
+    def path(self):
+        global gamemode
+        if self.type == Type.PLAYER:
+            return 'player.svg'
+        elif self.type == Type.ENEMY:
+            return 'enemy.svg'
+        elif self.type == Type.FIRE:
+            return 'trap.svg'
+        elif self.type == Type.EXIT:
+            return 'exit_open.svg' if gamemode == GameMode.PLAY else 'exit_closed.svg'
 
     def color(self):
         if self.type == Type.PLAYER:
