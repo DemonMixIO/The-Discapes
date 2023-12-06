@@ -35,6 +35,11 @@ class GameMode(Enum):
     LOSEFIRE = 5
 
 
+class Direction(Enum):
+    LEFT = 1
+    RIGHT = -1
+
+
 gamemode = GameMode.SUSPENDED
 
 
@@ -164,7 +169,7 @@ class Ui_MainWindow(object):
         self.label.setText(_translate("MainWindow", "TextLabel"))
         self.settingsText.setText(_translate("MainWindow", "Настройки"))
         self.countEnemyText.setText(_translate("MainWindow", "Кол-во врагов"))
-        self.countFireText.setText(_translate("MainWindow", "Кол-во огня"))
+        self.countFireText.setText(_translate("MainWindow", "Кол-во ловушек"))
         self.selectBGButton.setText(_translate("MainWindow", "Выбрать цвет фона"))
         self.button.setText(_translate("MainWindow", "Новая игра"))
         self.soundText.setText(_translate("MainWindow", "Звук"))
@@ -397,7 +402,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             self.load_second_mp3('bind_not_found_music.mp3')
             self.play_2()
-        print(gamemode)
 
     def check_move(self):
         global gamemode
@@ -449,14 +453,6 @@ class GameObject:
         self.desk[self.x][self.y] = (self.x, self.y, self.type)
 
     def draw(self, painter):
-        pen = QtGui.QPen()
-        pen.setWidth(1)
-        pen.setColor(QtGui.QColor(0, 0, 0))  # r, g, b
-        painter.setPen(pen)
-        brush = QtGui.QBrush()
-        brush.setColor(QtGui.QColor(*self.color()))  # r, g, b
-        brush.setStyle(Qt.BrushStyle.SolidPattern)
-        painter.setBrush(brush)
         tmp = QtGui.QPixmap(self.path()).scaled(QtCore.QSize(step, step),
                                                 aspectRatioMode=QtCore.Qt.AspectRatioMode.KeepAspectRatio,
                                                 transformMode=QtCore.Qt.TransformationMode.FastTransformation)
@@ -471,16 +467,10 @@ class GameObject:
             painter.setBrush(tmpbrush)
             painter.drawRect(QRect(self.x, self.y, step, step))
         if horizontal:  # horizontal
-            print('h')
             if self.type == Type.PLAYER:
                 tmp = tmp.transformed(QTransform().scale(-1, 1))
-                # painter.drawPixmap(QRect(self.x, self.y, step, step), tmp, QRect(0, 0, step, step))
-            # elif self.type == Type.ENEMY:
-            #     tmp = tmp.transformed(QTransform().scale(-1, 1))
             painter.drawPixmap(QRect(self.x, self.y, step, step), tmp, QRect(0, 0, step, step))
-
         else:  # vertical
-            print('v')
             painter.drawPixmap(QRect(self.x, self.y, step, step), tmp, QRect(0, 0, step, step))
 
     def path(self):
@@ -532,10 +522,14 @@ class GameObject:
 class Enemy(GameObject):
     def __init__(self, x, y, type):
         super().__init__(x, y, type)
+        self.direction = Direction.LEFT
 
     def persuit(self, player):
-        x1, y1, x2, y2 = (self.x, self.y,
-                          player.x, player.y)
+        x1, y1, x2, y2 = (self.x, self.y, player.x, player.y)
+        if x1 >= x2:
+            self.direction = Direction.LEFT
+        else:
+            self.direction = Direction.RIGHT
         if abs(x1 - x2) > abs(y1 - y2):
             if x1 >= x2:
                 return -step, 0
@@ -546,6 +540,28 @@ class Enemy(GameObject):
                 return 0, -step
             if y2 > y1:
                 return 0, step
+
+    def draw(self, painter):
+        tmp = QtGui.QPixmap(self.path()).scaled(QtCore.QSize(step, step),
+                                                aspectRatioMode=QtCore.Qt.AspectRatioMode.KeepAspectRatio,
+                                                transformMode=QtCore.Qt.TransformationMode.FastTransformation)
+        if gamemode != gamemode.PLAY:
+            tmppen = QtGui.QPen()
+            tmppen.setWidth(1)
+            tmppen.setColor(QtGui.QColor(*bg_color))  # r, g, b
+            painter.setPen(tmppen)
+            tmpbrush = QtGui.QBrush()
+            tmpbrush.setColor(QtGui.QColor(*bg_color))  # r, g, b
+            tmpbrush.setStyle(Qt.BrushStyle.SolidPattern)
+            painter.setBrush(tmpbrush)
+            painter.drawRect(QRect(self.x, self.y, step, step))
+        if horizontal:  # horizontal
+            tmp = tmp.transformed(QTransform().scale(self.direction.value, 1))
+            painter.drawPixmap(QRect(self.x, self.y, step, step), tmp, QRect(0, 0, step, step))
+
+        else:  # vertical
+            tmp = tmp.transformed(QTransform().scale(self.direction.value, 1))
+            painter.drawPixmap(QRect(self.x, self.y, step, step), tmp, QRect(0, 0, step, step))
 
 
 if __name__ == '__main__':
