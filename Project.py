@@ -555,11 +555,11 @@ class Enemy(GameObject):
             tmpbrush.setStyle(Qt.BrushStyle.SolidPattern)
             painter.setBrush(tmpbrush)
             painter.drawRect(QRect(self.x, self.y, step, step))
-        if horizontal:  # horizontal
+        if horizontal:
             tmp = tmp.transformed(QTransform().scale(self.direction.value, 1))
             painter.drawPixmap(QRect(self.x, self.y, step, step), tmp, QRect(0, 0, step, step))
 
-        else:  # vertical
+        else:
             tmp = tmp.transformed(QTransform().scale(self.direction.value, 1))
             painter.drawPixmap(QRect(self.x, self.y, step, step), tmp, QRect(0, 0, step, step))
 
