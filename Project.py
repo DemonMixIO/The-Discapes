@@ -194,8 +194,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.bg_music = QtMultimedia.QMediaPlayer()
         self.secondsound = QtMultimedia.QMediaPlayer()
         self.final = QtMultimedia.QMediaPlayer()
-        self.load_second_mp3('bind_not_found_music.mp3.mp3')
-        self.load_mp3('in-game_music.mp3')
+        self.load_second_mp3('sounds/bind_not_found_music.mp3')
+        self.load_mp3('sounds/in-game_music.mp3')
         self.is_play = True
         canvas = QtGui.QPixmap(N_X * step, N_Y * step)
         canvas.fill(Qt.white)
@@ -220,7 +220,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def play_steps(self):
         self.steps = QtMultimedia.QMediaPlayer()
-        media = QtCore.QUrl.fromLocalFile('step_music.mp3')
+        media = QtCore.QUrl.fromLocalFile('sounds/step_music.mp3')
         content = QtMultimedia.QMediaContent(media)
         self.steps.setMedia(content)
         self.steps.play()
@@ -232,9 +232,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def play_final_music(self, win):
         if win:
-            media = QtCore.QUrl.fromLocalFile('win_music.mp3')
+            media = QtCore.QUrl.fromLocalFile('sounds/win_music.mp3')
         else:
-            media = QtCore.QUrl.fromLocalFile('lose_music.mp3')
+            media = QtCore.QUrl.fromLocalFile('sounds/lose_music.mp3')
         content = QtMultimedia.QMediaContent(media)
         self.final.setMedia(content)
         self.stop()
@@ -268,7 +268,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def setbgcolor(self):
         global bg_color
-        self.load_second_mp3('mouse_click.mp3')
+        self.load_second_mp3('sounds/mouse_click.mp3')
         self.play_2()
         color = QColorDialog.getColor()
         if color.isValid():
@@ -301,7 +301,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.can_move = True
         self.stats_update()
         self.stop()
-        self.load_mp3('in-game_music.mp3')
+        self.load_mp3('sounds/in-game_music.mp3')
         self.play()
 
         x, y = (random.randint(0, N_X - 1) * step, random.randint(0, N_Y - 1) * step)
@@ -387,7 +387,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 bind = True
                 self.player.move_wrap(mx=step, my=0)
             else:
-                self.load_second_mp3('bind_not_found_music.mp3')
+                self.load_second_mp3('sounds/bind_not_found_music.mp3')
                 self.play_2()
                 bind = False
             if bind:
@@ -400,7 +400,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.update()
                 self.check_move()
         else:
-            self.load_second_mp3('bind_not_found_music.mp3')
+            self.load_second_mp3('sounds/bind_not_found_music.mp3')
             self.play_2()
 
     def check_move(self):
@@ -476,13 +476,13 @@ class GameObject:
     def path(self):
         global gamemode
         if self.type == Type.PLAYER:
-            return 'player.svg'
+            return 'sprites/player.svg'
         elif self.type == Type.ENEMY:
-            return 'enemy.svg'
+            return 'sprites/enemy.svg'
         elif self.type == Type.FIRE:
-            return 'trap_on.svg' if gamemode == GameMode.LOSEFIRE else 'trap_off.svg'
+            return 'sprites/trap_on.svg' if gamemode == GameMode.LOSEFIRE else 'sprites/trap_off.svg'
         elif self.type == Type.EXIT:
-            return 'exit_open.svg' if gamemode == GameMode.PLAY else 'exit_closed.svg'
+            return 'sprites/exit_open.svg' if gamemode == GameMode.PLAY else 'sprites/exit_closed.svg'
 
     def color(self):
         if self.type == Type.PLAYER:
